@@ -1,6 +1,6 @@
 {
-  "name": "vizlab",
-  "version": "0.1.0",
+  "name": "jee-visualizer",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -13,6 +13,7 @@
     "react-dom": "^18.3.1",
     "plotly.js-dist-min": "^2.35.2",
     "three": "^0.169.0",
+    "lucide-react": "^0.446.0",
     "mermaid": "^11.3.0"
   },
   "devDependencies": {
