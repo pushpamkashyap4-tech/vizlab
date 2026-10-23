@@ -1,93 +1,71 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import * as math from 'mathjs';
 
-type FnKey = 'ripple' | 'saddle' | 'gaussian' | 'sinxy';
-
-const FUNCTIONS: Record<FnKey, (x: number, y: number) => number> = {
-  ripple: (x, y) => Math.sin(Math.sqrt(x * x + y * y)) * 2,
-  saddle: (x, y) => (x * x - y * y) / 5,
-  gaussian: (x, y) => Math.exp(-(x * x + y * y) / 5) * 3,
-  sinxy: (x, y) => Math.sin(x) * Math.cos(y),
-};
-
-export default function ScientificPlot() {
+export default function ScientificPlot({ initialFn = 'z = sin(x) * cos(y)' }: { initialFn?: string }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [fn, setFn] = useState<FnKey>('ripple');
   const [plotly, setPlotly] = useState<any>(null);
+  const [expression, setExpression] = useState(initialFn);
 
   useEffect(() => {
-    let mounted = true;
-    import('plotly.js-dist-min').then((mod: any) => {
-      if (mounted) setPlotly(mod.default ?? mod);
-    });
-    return () => {
-      mounted = false;
-    };
+    import('plotly.js-dist-min').then((mod: any) => setPlotly(mod.default ?? mod));
   }, []);
 
   useEffect(() => {
     if (!plotly || !ref.current) return;
     const el = ref.current;
 
-    const size = 50;
+    const cleanExpr = expression.replace('z =', '').replace('z=', '').trim();
+    const size = 40;
     const axis = Array.from({ length: size }, (_, i) => -5 + (10 * i) / (size - 1));
-    const z = axis.map((y) => axis.map((x) => FUNCTIONS[fn](x, y)));
+    
+    const z = axis.map(y => axis.map(x => {
+      try {
+        return math.evaluate(cleanExpr, { x, y });
+      } catch {
+        return 0;
+      }
+    }));
 
-    const data = [
-      {
-        type: 'surface',
-        x: axis,
-        y: axis,
-        z,
-        colorscale: [
-          [0, '#0e7490'],
-          [0.5, '#22d3ee'],
-          [1, '#a855f7'],
-        ],
-        showscale: false,
-      },
-    ];
+    const trace = {
+      type: 'surface',
+      x: axis,
+      y: axis,
+      z: z,
+      colorscale: 'Viridis',
+      showscale: false,
+    };
 
     const layout = {
       paper_bgcolor: 'rgba(0,0,0,0)',
       plot_bgcolor: 'rgba(0,0,0,0)',
-      font: { color: '#e5e5e5', size: 12 },
-      margin: { t: 20, r: 20, b: 20, l: 20 },
+      font: { color: '#e2e8f0' },
+      margin: { t: 0, r: 0, b: 0, l: 0 },
       scene: {
-        xaxis: { color: '#888', gridcolor: 'rgba(255,255,255,0.08)' },
-        yaxis: { color: '#888', gridcolor: 'rgba(255,255,255,0.08)' },
-        zaxis: { color: '#888', gridcolor: 'rgba(255,255,255,0.08)' },
+        xaxis: { color: '#64748b', gridcolor: '#334155' },
+        yaxis: { color: '#64748b', gridcolor: '#334155' },
+        zaxis: { color: '#64748b', gridcolor: '#334155' },
         bgcolor: 'rgba(0,0,0,0)',
       },
     };
 
-    plotly.newPlot(el, data, layout, { responsive: true, displayModeBar: false });
-
-    return () => {
-      if (el) plotly.purge(el);
-    };
-  }, [plotly, fn]);
+    plotly.newPlot(el, [trace], layout, { responsive: true, displayModeBar: false });
+    return () => { if (el) plotly.purge(el); };
+  }, [plotly, expression]);
 
   return (
-    <div className="flex h-full flex-col gap-3">
-      <div className="flex flex-wrap gap-2">
-        {(Object.keys(FUNCTIONS) as FnKey[]).map((k) => (
-          <button
-            key={k}
-            onClick={() => setFn(k)}
-            className={`rounded-md px-3 py-1.5 text-sm capitalize transition ${
-              fn === k ? 'bg-cyan-500 text-black' : 'bg-neutral-800 hover:bg-neutral-700'
-            }`}
-          >
-            {k === 'sinxy' ? 'sin(x)·cos(y)' : k}
-          </button>
-        ))}
+    <div className="flex flex-col h-full bg-slate-900 rounded-xl p-4 md:p-6 border border-slate-800">
+      <div className="mb-4">
+        <input 
+          type="text" 
+          value={expression}
+          onChange={(e) => setExpression(e.target.value)}
+          className="w-full bg-slate-950 border border-slate-700 text-cyan-400 font-mono text-lg rounded-lg p-3 outline-none focus:border-cyan-500"
+        />
+        <p className="text-xs text-slate-400 mt-2">Try: z = x^2 - y^2, z = sin(x) + cos(y), z = 1/(x^2+y^2)</p>
       </div>
-      <div
-        ref={ref}
-        className="min-h-0 flex-1 rounded-lg border border-neutral-800 bg-neutral-900/40"
-      />
+      <div ref={ref} className="flex-1 min-h-[400px]" />
     </div>
   );
 }
