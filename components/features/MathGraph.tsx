@@ -78,7 +78,8 @@ export default function MathGraph({ initialFn = 'y = sin(x)' }: { initialFn?: st
           className="w-full bg-slate-950 border border-slate-700 text-cyan-400 font-mono text-lg rounded-lg p-3 outline-none focus:border-cyan-500"
           placeholder="Type any function, e.g., y = tan(x)"
         />
-        <p className="text-xs text-slate-400 mt-2">Try: y = x^2, y = sin(x)*cos(x), y = 1/x, y = {x}, y = e^x</p>
+        {/* FIXED LINE BELOW: Wrapped {x} in a string {'{x}'} */}
+        <p className="text-xs text-slate-400 mt-2">Try: y = x^2, y = sin(x)*cos(x), y = 1/x, y = {'{x}'}, y = e^x</p>
       </div>
       <div ref={ref} className="flex-1 min-h-[400px]" />
     </div>
